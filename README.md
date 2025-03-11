@@ -30,7 +30,15 @@ const expressApp = express();
 import handleWebsocket from '/services/handleWebsocket.ts'
 import {UltimateExpressWS} from 'ultimate-express-ws'
 
-
+// EXPRESSWS
+// export const appInstance = ExpressWS(expressApp, undefined, 
+// { 
+//    wsOptions: {
+//    perMessageDeflate: true,
+//    clientTracking: true,
+//    autoPong: true, 
+//  }
+// });
 export const appInstance = UltimateExpressWS(expressApp, undefined, 
  { 
     wsOptions: {
