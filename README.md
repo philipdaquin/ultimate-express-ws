@@ -10,6 +10,13 @@ Main Changes:
 - Middleware support + Map Based route storage
 - added custom `getRoutes()` to view all Websocket endpoints (for debugging)
 
+### Installation 
+```
+npm i ultimate-express-ws
+```
+
+
+
 ### Example With Ultimate-Express 
 ```
 const express = require("ultimate-express"); // or express 
