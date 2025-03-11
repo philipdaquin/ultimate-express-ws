@@ -1,5 +1,5 @@
-const { WebSocketServer, WebSocket } = require("ultimate-ws");
-import * as express from "express";
+const { WebSocketServer } = require("ultimate-ws");
+import * as express from "ultimate-express";
 import * as core from "express-serve-static-core";
 import * as http from "http";
 import * as https from "https";
@@ -11,7 +11,7 @@ import { pathToRegexp, match } from 'path-to-regexp';
 
 interface Options {
     // Seems unnecessary since the we don't modify the express.Router globally
-    // leaveRouterUntouched?: boolean | undefined;
+    leaveRouterUntouched?: boolean | undefined;
     wsOptions?: ws.ServerOptions & {
         perMessageDeflate?: boolean | number; // Compression
         maxPayload?: number; // Max message size
@@ -32,10 +32,10 @@ interface Instance {
   app: Application;
   applyTo(target: RouterLike): void;
   getWss(): typeof WebSocketServer;
-  getRoutes() : {pattern: string, handler: WebsocketRequestHandler}[]
+  getRoutes() : Map<string, WebsocketRequestHandler>
 }
   
-type WebsocketRequestHandler = (ws: WebSocket, req: express.Request, next: express.NextFunction) => void;
+type WebsocketRequestHandler = (ws: ws.WebSocket, req: express.Request, next: express.NextFunction) => void;
 type WebsocketMethod<T> = (route: core.PathParams, ...middlewares: WebsocketRequestHandler[]) => T;
 
 interface WithWebsocketMethod {
@@ -51,16 +51,23 @@ interface WithWebsocketMethod {
 type Application = express.Application & WithWebsocketMethod;
 type Router = express.Router & WithWebsocketMethod;
 // Helper to find a matching route pattern
-function findMatchingRoute(pathname: string, routes: any[]): any {
-    for (const route of routes) {
-        const matcher = match(route.pattern, { decode: decodeURIComponent });
-        const result = matcher(pathname);
-        if (result) {
-            route.params = result.params; // Attach params to route object
-            return route;
-        }
-    }
-    return null;
+// Helper to find a matching route pattern
+function findMatchingRoute(
+  pathname: string,
+  routes: Map<string, WebsocketRequestHandler>
+): { pattern: string; handler: WebsocketRequestHandler; params: Record<string, string> } | null {
+  for (const [pattern, handler] of routes.entries()) {
+      const matcher = match(pattern, { decode: decodeURIComponent });
+      const result = matcher(pathname);
+      if (result) {
+          return {
+              pattern,
+              handler,
+              params: result.params as Record<string, string>, // Type assertion for params
+          };
+      }
+  }
+  return null;
 }
   
 // Helper to extract route params
@@ -88,7 +95,8 @@ export function UltimateExpressWS(
     options: Options = {}
 ): Instance {
     // Store WebSocket route handlers
-    const wsRoutes: { pattern: string; handler: WebsocketRequestHandler }[] = [];
+    // const wsRoutes: { pattern: string; handler: WebsocketRequestHandler }[] = [];
+    const wsRoutesMap = new Map<string, WebsocketRequestHandler>()
     
     // Setup WebSocket server with a custom handleUpgrade function
     const wss = new WebSocketServer({
@@ -114,7 +122,7 @@ export function UltimateExpressWS(
             const pathname = url.split('?')[0]; // Simple path extraction without URL constructor
             
             // Find matching route
-            const matchingRoute = findMatchingRoute(pathname, wsRoutes);
+            const matchingRoute = findMatchingRoute(pathname, wsRoutesMap);
             
             if (matchingRoute) {
                 // Extract route params
@@ -145,22 +153,35 @@ export function UltimateExpressWS(
         }
     });
     
-    // Add the .ws() method to the app
-    (app as Application).ws = function(route, ...handlers) {
+    // Add the .ws() method to the app with middleware support
+    (app as Application).ws = function(route, ...handlers: Array<express.RequestHandler | WebsocketRequestHandler>) {
+      const finalHandler = handlers.pop() as WebsocketRequestHandler;
+      if (!finalHandler) {
+          throw new Error('At least one WebSocket handler is required');
+      }
 
-        const handlerStack = handlers.map(handler => ({handler}))
-        wsRoutes.push({ 
-            pattern: route.toString(),
-            handler: (ws: WebSocket, req: express.Request, next: express.NextFunction) => {
-                let index = 0;
-                const nextFn = () => {
-                    if (index < handlerStack.length) {
-                        handlerStack[index++].handler(ws, req, nextFn);
-                    }
-                };
-                nextFn();
-            }
-        })
+      // Create a handler that chains middleware and the final WebSocket handler
+        const chainedHandler: WebsocketRequestHandler = (ws: ws.WebSocket, req: express.Request, next: express.NextFunction) => {
+            let index = 0;
+            const nextFn = (err?: any) => {
+                if (err) {
+                    // Handle errors (e.g., close the WebSocket or log)
+                    ws.close(1011, 'Internal Server Error');
+                    return;
+                }
+                if (index < handlers.length) {
+                    // Execute HTTP middleware
+                    // @ts-ignore
+                    (handlers[index++] as express.RequestHandler)(req, {} as any, nextFn);
+                } else {
+                    // Execute the final WebSocket handler
+                    finalHandler(ws, req, next);
+                }
+            };
+            nextFn();
+        };
+
+        wsRoutesMap.set(route.toString(), chainedHandler);
         return this;
     };
     
@@ -172,8 +193,8 @@ export function UltimateExpressWS(
         getWss(): typeof WebSocketServer {
             return wss;
         },
-        getRoutes() : {pattern: string, handler: WebsocketRequestHandler}[] {
-            return wsRoutes
+        getRoutes() {
+            return wsRoutesMap
         }
     };
 
