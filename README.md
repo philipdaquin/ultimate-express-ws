@@ -7,6 +7,10 @@ Checkout
 - Ultimate-WS [https://github.com/dimdenGD/ultimate-ws]
 - Ultimate-express [https://github.com/dimdenGD/ultimate-express]
 
+***NOTE**
+If you are already using `bun`, these libraries will fail (trust me lol)! You have to uninstall `bun` first and switch to Node JS for these libraries to work.
+
+
 Main Changes: 
 - leverages Ultimate-WS features 
 - Type safety
@@ -39,6 +43,11 @@ const app = appInstance.app
 
 // Add your websocket endpoint
 app.ws('/ws', handleWebsocket)
+
+// appInstance.getRoutes() -- Lists all for your ws routes
+// appInstance.getWss() -- the main WebSocket server
+// appInstance.app - express app
+
 
 
 ```
