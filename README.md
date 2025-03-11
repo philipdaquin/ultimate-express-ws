@@ -3,6 +3,10 @@ Drop in replacement for `Express-WS` library in favour of Ultimate-WS over the _
 
 Makes it easy to add Websocket Endpoints to your Express app while using uWebsockets under the hood through Ultimate-WS. 
 
+Checkout 
+- Ultimate-WS [https://github.com/dimdenGD/ultimate-ws]
+- Ultimate-express [https://github.com/dimdenGD/ultimate-express]
+
 Main Changes: 
 - leverages Ultimate-WS features 
 - Type safety
@@ -14,8 +18,6 @@ Main Changes:
 ```
 npm i ultimate-express-ws
 ```
-
-
 
 ### Example With Ultimate-Express 
 ```
