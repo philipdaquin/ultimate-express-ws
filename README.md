@@ -55,4 +55,4 @@ app.ws('/ws', handleWebsocket)
 
 ```
 
-** This is early release so use it at your own risk **
+** This is an early release so use it at your own risk **
