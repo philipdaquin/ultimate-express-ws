@@ -1,4 +1,4 @@
-const { WebSocketServer, Web } = require("ultimate-ws");
+const { WebSocketServer } = require("ultimate-ws");
 import * as express from "ultimate-express";
 import * as core from "express-serve-static-core";
 import * as http from "http";
