@@ -22,6 +22,7 @@ npm i ultimate-express-ws
 const express = require("ultimate-express"); // or express 
 const expressApp = express();
 import handleWebsocket from '/services/handleWebsocket.ts'
+import {UltimateExpressWS} from 'ultimate-express-ws'
 
 
 export const appInstance = UltimateExpressWS(expressApp, undefined, 
