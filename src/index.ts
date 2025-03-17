@@ -32,7 +32,8 @@ interface Instance {
   app: Application;
   applyTo(target: RouterLike): void;
   getWss(): typeof WebSocketServer;
-  getRoutes() : Map<string, WebsocketRequestHandler>
+  getRoutes() : Map<string, WebsocketRequestHandler>,
+  cleanup(): void
 }
   
 type WebsocketRequestHandler = (ws: ws.WebSocket, req: express.Request, next: express.NextFunction) => void;
@@ -183,8 +184,7 @@ export function UltimateExpressWS(
 
         wsRoutesMap.set(route.toString(), chainedHandler);
         return this;
-    };
-    
+    };    
     const instance: Instance = {
         app: app as Application,
         applyTo(target: RouterLike): void {
@@ -195,6 +195,10 @@ export function UltimateExpressWS(
         },
         getRoutes() {
             return wsRoutesMap
+        },
+        cleanup() {
+            wsRoutesMap.clear()
+            wss.close()
         }
     };
 
