@@ -1,4 +1,4 @@
-import {WebSocketServer, WebSocketServerOptions} from 'ultimate-ws'
+import {WebSocketServer, WebSocketServerOptions, WebSocket} from 'ultimate-ws'
 import * as express from "ultimate-express";
 import * as core from "express-serve-static-core";
 import * as http from "http";
@@ -32,7 +32,8 @@ interface Instance {
   cleanup(): void
 }
   
-type WebsocketRequestHandler = (ws: ws.WebSocket, req: express.Request, next: express.NextFunction) => void;
+// Made compatible with Ultimate WS websocket and the originalk websocket, seems to work either way.... let me kno if it goes bananas
+type WebsocketRequestHandler = (ws: WebSocket | ws.WebSocket, req: express.Request, next: express.NextFunction) => void;
 type WebsocketMethod<T> = (route: core.PathParams, ...middlewares: WebsocketRequestHandler[]) => T;
 
 interface WithWebsocketMethod {
@@ -122,7 +123,7 @@ export function UltimateExpressWS(
                 request.params = params;
                 
                 // Return the connection handler
-                return (ws: ws.WebSocket, req: any) => {
+                return (ws: WebSocket, req: any) => {
                     try { 
                         // Call the route handler
                         matchingRoute.handler(ws, req, (() => {}) as express.NextFunction);
@@ -153,7 +154,7 @@ export function UltimateExpressWS(
       }
 
       // Create a handler that chains middleware and the final WebSocket handler
-        const chainedHandler: WebsocketRequestHandler = (ws: ws.WebSocket, req: express.Request, next: express.NextFunction) => {
+        const chainedHandler: WebsocketRequestHandler = (ws: WebSocket | ws.WebSocket, req: express.Request, next: express.NextFunction) => {
             let index = 0;
             const nextFn = (err?: any) => {
                 if (err) {
