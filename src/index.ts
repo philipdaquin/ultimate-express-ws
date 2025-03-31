@@ -1,4 +1,4 @@
-const { WebSocketServer } = require("ultimate-ws");
+import {WebSocketServer, WebSocketServerOptions} from 'ultimate-ws'
 import * as express from "ultimate-express";
 import * as core from "express-serve-static-core";
 import * as http from "http";
@@ -12,14 +12,7 @@ import { pathToRegexp, match } from 'path-to-regexp';
 interface Options {
     // Seems unnecessary since the we don't modify the express.Router globally
     leaveRouterUntouched?: boolean | undefined;
-    wsOptions?: ws.ServerOptions & {
-        perMessageDeflate?: boolean | number; // Compression
-        maxPayload?: number; // Max message size
-        autoPong?: boolean; // Automatic pings
-        verifyClient?: (info: { origin: string; req: any; secure: boolean }) => boolean | Promise<boolean>;
-        maxBackpressure?: number;
-        idleTimeout?: number;
-    };
+    wsOptions?: WebSocketServerOptions;
 }
   
 interface RouterLike {
@@ -31,7 +24,10 @@ interface RouterLike {
 interface Instance {
   app: Application;
   applyTo(target: RouterLike): void;
-  getWss(): typeof WebSocketServer;
+
+  // To learn more about the implementation of the WebSocketServer
+  // https://github.com/dimdenGD/ultimate-ws/blob/main/src/server.js
+  getWss(): WebSocketServer;
   getRoutes() : Map<string, WebsocketRequestHandler>,
   cleanup(): void
 }
@@ -102,12 +98,7 @@ export function UltimateExpressWS(
     // Setup WebSocket server with a custom handleUpgrade function
     const wss = new WebSocketServer({
         server: app || server,
-        perMessageDeflate: options.wsOptions?.perMessageDeflate,
-        maxPayload: options.wsOptions?.maxPayload,
-        autoPong: options.wsOptions?.autoPong,
-        verifyClient: options.wsOptions?.verifyClient,
-        maxBackpressure: options.wsOptions?.maxBackpressure,
-        idleTimeout: options.wsOptions?.idleTimeout,
+        ...options.wsOptions, // This spreads all options.wsOptions properties directly
         handleProtocols: (protocols: Set<string>, req: any) => {
             // Example: Return the first supported protocol
             const supported = ['chat', 'graphql-ws'];
@@ -190,7 +181,7 @@ export function UltimateExpressWS(
         applyTo(target: RouterLike): void {
             (target as any).ws = (app as Application).ws;
         },
-        getWss(): typeof WebSocketServer {
+        getWss(): WebSocketServer {
             return wss;
         },
         getRoutes() {
