@@ -31,8 +31,6 @@ interface Instance {
   getRoutes() : Map<string, WebsocketRequestHandler>,
   cleanup(): void
 }
-  
-// Made compatible with Ultimate WS websocket and the originalk websocket, seems to work either way.... let me kno if it goes bananas
 type WebsocketRequestHandler = (ws: ws.WebSocket, req: express.Request, next: express.NextFunction) => void;
 type WebsocketMethod<T> = (route: core.PathParams, ...middlewares: WebsocketRequestHandler[]) => T;
 
