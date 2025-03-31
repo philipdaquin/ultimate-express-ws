@@ -1,6 +1,6 @@
 {
   "name": "ultimate-express-ws",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Similar to Express-WS functionality, but instead of using the traditional `WS` library on NodeJs, it's using Ultimate-WS (ie UWebsockets.js)",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
