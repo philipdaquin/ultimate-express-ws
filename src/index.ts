@@ -3,7 +3,7 @@ import * as express from "ultimate-express";
 import * as core from "express-serve-static-core";
 import * as http from "http";
 import * as https from "https";
-import * as ws from "ws"; // types 
+// import * as ws from "ws"; // types 
 import { pathToRegexp, match } from 'path-to-regexp';
 
 
@@ -33,7 +33,7 @@ interface Instance {
 }
   
 // Made compatible with Ultimate WS websocket and the originalk websocket, seems to work either way.... let me kno if it goes bananas
-type WebsocketRequestHandler = (ws: WebSocket | ws.WebSocket, req: express.Request, next: express.NextFunction) => void;
+type WebsocketRequestHandler = (ws: WebSocket, req: express.Request, next: express.NextFunction) => void;
 type WebsocketMethod<T> = (route: core.PathParams, ...middlewares: WebsocketRequestHandler[]) => T;
 
 interface WithWebsocketMethod {
@@ -154,7 +154,7 @@ export function UltimateExpressWS(
       }
 
       // Create a handler that chains middleware and the final WebSocket handler
-        const chainedHandler: WebsocketRequestHandler = (ws: WebSocket | ws.WebSocket, req: express.Request, next: express.NextFunction) => {
+        const chainedHandler: WebsocketRequestHandler = (ws: WebSocket, req: express.Request, next: express.NextFunction) => {
             let index = 0;
             const nextFn = (err?: any) => {
                 if (err) {
